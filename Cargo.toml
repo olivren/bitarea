@@ -3,3 +3,6 @@
 name = "bitarea"
 version = "0.0.1"
 authors = ["Olivier Renaud <o.renaud@gmx.fr>"]
+
+[dependencies]
+rand = "0.2.0"

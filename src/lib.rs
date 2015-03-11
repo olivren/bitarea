@@ -1,10 +1,15 @@
 #![feature(core)]
 
+extern crate rand;
+
 pub mod bitarea {
 
 use std::ops::Shl;
 use std::u64;
 use std::fmt;
+use std::cmp::min;
+use rand::{Rand, Rng, thread_rng};
+use rand::distributions::{Sample, Gamma};
 
 #[derive(Copy)]
 pub struct Bitarea64 {
@@ -70,8 +75,42 @@ impl fmt::Debug for Bitarea64 {
     }
 }
 
+impl Eq for Bitarea64{}
+impl PartialEq for Bitarea64 {
+
+    fn eq(&self, other: &Bitarea64) -> bool {
+        if (self.width, self.height) != (other.width, other.height) {
+            return false;
+        }
+        let unused_bits = 64 - (self.width*self.height);
+        return self.data >> unused_bits == other.data >> unused_bits;
+    }
+}
+
+impl Rand for Bitarea64 {
+
+    fn rand<R>(rng: &mut R) -> Self where R: Rng {
+        let mut w;
+        let mut h;
+        let mut gamma = Gamma::new(7.0, 0.5);
+        loop {
+            let wf = gamma.sample(&mut thread_rng());
+            w = min(64, wf as u32);
+            let hf = gamma.sample(&mut thread_rng());
+            h = min(64, hf as u32);
+            if w*h <= 64 {
+                break;
+            }
+        }
+        Bitarea64 { width: w, height: h, data: rng.gen() }
+    }
+}
+
 #[test]
 fn test1() {
+
+use rand::random;
+
     let mut b1 = Bitarea64::new(3,4);
     b1.set(0,0, true);
     b1.set(1,3, true);
@@ -83,6 +122,10 @@ fn test1() {
     let b2 = b1 << 1;
     println!("{:?}", b2);
 
+    for _ in 0..100 {
+        let b3: Bitarea64 = random();
+        println!("{:?}", b3);
+    }
 }
 
 }
