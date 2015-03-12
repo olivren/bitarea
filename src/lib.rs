@@ -4,10 +4,11 @@ extern crate rand;
 
 pub mod bitarea {
 
-use std::ops::Shl;
+use std::ops::{Shl,Shr};
 use std::u64;
 use std::fmt;
 use std::cmp::min;
+use std::str::FromStr;
 use rand::{Rand, Rng, thread_rng};
 use rand::distributions::{Sample, Gamma};
 
@@ -44,6 +45,21 @@ impl Bitarea64 {
         let mask = 1 << (63-(row*self.width+col));
         self.data & mask != 0
     }
+
+    pub fn from_parts(width: u32, height: u32, parts: &[u64]) -> Bitarea64 {
+        assert!(parts.len() == height);
+        let d = 0;
+        for v in parts.iter().rev() {
+            d &= v;
+            d << width;
+        }
+        d << (63-(width*height));
+        Bitarea64 {
+            width: width,
+            height: height,
+            data: d
+        }
+    }
 }
 
 impl Shl<u32> for Bitarea64 {
@@ -57,6 +73,22 @@ impl Shl<u32> for Bitarea64 {
         }
         Bitarea64 {
             data: (self.data << rhl) & mask,
+            ..self
+        }
+    }
+}
+
+impl Shr<u32> for Bitarea64 {
+
+    type Output = Bitarea64;
+
+    fn shr(self, rhl: u32) -> Bitarea64 {
+        let mut mask = !0u64;
+        for i in 0..self.height {
+            mask &= !((1 << self.width-1) << (64-i*self.width));
+        }
+        Bitarea64 {
+            data: (self.data >> rhl) & mask,
             ..self
         }
     }
@@ -107,23 +139,89 @@ impl Rand for Bitarea64 {
 }
 
 #[test]
-fn test1() {
+fn test_set() {
+    let mut b = Bitarea64::new(3,4);
+    b.set(0,0, true);
+    b.set(1,3, true);
+    b.set(1,2, true);
+    b.set(0,2, true);
+    b.set(2,1, true);
 
-use rand::random;
+    assert_eq!(Bitarea64::from_parts(3,4,[0b000,
+                                          0b001,
+                                          0b110,
+                                          0b010]),
+               b)
+}
 
-    let mut b1 = Bitarea64::new(3,4);
-    b1.set(0,0, true);
-    b1.set(1,3, true);
-    b1.set(1,2, true);
-    b1.set(0,2, true);
-    b1.set(2,1, true);
-    println!("{:?}", b1);
+#[test]
+fn test_get() {
+    let b = Bitarea64::from_parts(3,4,[0b001,
+                                       0b111,
+                                       0b010,
+                                       0b001]);
+    assert_eq(b.get(0,0), false);
+    assert_eq(b.get(0,1), false);
+    assert_eq(b.get(0,2), true);
+    assert_eq(b.get(1,0), true);
+    assert_eq(b.get(1,1), true);
+    assert_eq(b.get(1,2), true);
+    assert_eq(b.get(2,0), false);
+    assert_eq(b.get(2,1), true);
+    assert_eq(b.get(2,2), false);
+    assert_eq(b.get(3,0), false);
+    assert_eq(b.get(3,1), false);
+    assert_eq(b.get(3,2), true);
+}
 
-    let b2 = b1 << 1;
-    println!("{:?}", b2);
+#[test]
+fn test_shl() {
+    let b = Bitarea64::from_parts(3,3,[0b001,
+                                       0b111,
+                                       0b010,
+                                       0b001]);
 
-    for _ in 0..100 {
-        let b3: Bitarea64 = random();
+    assert_eq!(Bitarea64::from_parts(3,3,[0b010,
+                                          0b110,
+                                          0b010]),
+               b << 1);
+
+    assert_eq!(Bitarea64::from_parts(3,3,[0b100,
+                                          0b100,
+                                          0b100]),
+               b << 2);
+
+    assert_eq!(Bitarea64::from_parts(3,3,[0b000,
+                                          0b000,
+                                          0b000]),
+               b << 3);
+
+    assert_eq!(Bitarea64::from_parts(3,3,[0b000,
+                                          0b000,
+                                          0b000]),
+               b << 4);
+
+}
+
+#[test]
+fn test_shr() {
+    let mut b = Bitarea64::new(3,4);
+    b.set(0,0, true);
+    b.set(1,3, true);
+    b.set(1,2, true);
+    b.set(0,2, true);
+    b.set(2,1, true);
+    println!("original:\n{:?}", b);
+
+    println!("{shr:\n?}", b >> 1);
+}
+
+#[test]
+fn test_rand() {
+    use rand::random;
+
+    for _ in 0..10 {
+        let b4: Bitarea64 = random();
         println!("{:?}", b3);
     }
 }
