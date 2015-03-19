@@ -54,10 +54,13 @@ impl Shl<u32> for Bitarea {
     type Output = Bitarea;
 
     fn shl(self, rhl: u32) -> Bitarea {
+        if rhl >= width {
+            return Bitarea {data: 0}
+        }
         let mut mask = 0;
-        for i in 0..height {
+        for _ in 0..height {
             mask <<= width;
-            mask |= 1;
+            mask |= (1 << rhl) - 1;
         }
         mask = (!mask) << unused_bits;
         Bitarea {data: (self.data << rhl) & mask}
@@ -69,10 +72,15 @@ impl Shr<u32> for Bitarea {
     type Output = Bitarea;
 
     fn shr(self, rhl: u32) -> Bitarea {
-        let mut mask = !0u64;
-        for i in 0..height {
-            mask &= !((1 << width-1) << (64-i*width));
+        if rhl >= width {
+            return Bitarea {data: 0}
         }
+        let mut mask = 0;
+        for _ in 0..height {
+            mask <<= width;
+            mask |= (1 << (width - rhl)) - 1;
+        }
+        mask = mask << unused_bits;
         Bitarea {data: (self.data >> rhl) & mask}
     }
 }
@@ -99,8 +107,7 @@ impl PartialEq for Bitarea {
 }
 
 #[test]
-fn test_fmt() {
-
+fn fmt() {
     let x = Bitarea::from_parts(&[0b100,
                                   0b001,
                                   0b110,
@@ -109,7 +116,7 @@ fn test_fmt() {
 }
 
 #[test]
-fn test_set() {
+fn set() {
     let mut b = Bitarea::new();
     b.set(0,0, true);
     b.set(1,3, true);
@@ -125,7 +132,7 @@ fn test_set() {
 }
 
 #[test]
-fn test_get() {
+fn get() {
     let b = Bitarea::from_parts(&[0b001,
                                   0b111,
                                   0b010,
@@ -145,11 +152,17 @@ fn test_get() {
 }
 
 #[test]
-fn test_shl() {
-    let b = Bitarea::from_parts(&[0b001,
-                                  0b111,
-                                  0b010,
-                                  0b001]);
+fn shl1() {
+    let b = Bitarea::from_parts(   &[0b001,
+                                     0b111,
+                                     0b010,
+                                     0b001]);
+
+    assert_eq!(Bitarea::from_parts(&[0b001,
+                                     0b111,
+                                     0b010,
+                                     0b001]),
+               b << 0);
 
     assert_eq!(Bitarea::from_parts(&[0b010,
                                      0b110,
@@ -178,7 +191,276 @@ fn test_shl() {
 }
 
 #[test]
-fn test_shr() {
+fn shl2() {
+    let b = Bitarea::from_parts(   &[0b111,
+                                     0b111,
+                                     0b111,
+                                     0b111]);
+
+    assert_eq!(Bitarea::from_parts(&[0b111,
+                                     0b111,
+                                     0b111,
+                                     0b111]),
+               b << 0);
+
+    assert_eq!(Bitarea::from_parts(&[0b110,
+                                     0b110,
+                                     0b110,
+                                     0b110]),
+               b << 1);
+
+    assert_eq!(Bitarea::from_parts(&[0b100,
+                                     0b100,
+                                     0b100,
+                                     0b100]),
+               b << 2);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b000,
+                                     0b000,
+                                     0b000]),
+               b << 3);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b000,
+                                     0b000,
+                                     0b000]),
+               b << 4);
+
+}
+
+#[test]
+fn shl3() {
+    let b = Bitarea::from_parts(   &[0b101,
+                                     0b010,
+                                     0b101,
+                                     0b010]);
+
+    assert_eq!(Bitarea::from_parts(&[0b101,
+                                     0b010,
+                                     0b101,
+                                     0b010]),
+               b << 0);
+
+    assert_eq!(Bitarea::from_parts(&[0b010,
+                                     0b100,
+                                     0b010,
+                                     0b100]),
+               b << 1);
+
+    assert_eq!(Bitarea::from_parts(&[0b100,
+                                     0b000,
+                                     0b100,
+                                     0b000]),
+               b << 2);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b000,
+                                     0b000,
+                                     0b000]),
+               b << 3);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b000,
+                                     0b000,
+                                     0b000]),
+               b << 4);
+
+}
+
+#[test]
+fn shl4() {
+    let b = Bitarea::from_parts(   &[0b010,
+                                     0b101,
+                                     0b010,
+                                     0b101]);
+
+    assert_eq!(Bitarea::from_parts(&[0b010,
+                                     0b101,
+                                     0b010,
+                                     0b101]),
+               b << 0);
+
+    assert_eq!(Bitarea::from_parts(&[0b100,
+                                     0b010,
+                                     0b100,
+                                     0b010]),
+               b << 1);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b100,
+                                     0b000,
+                                     0b100]),
+               b << 2);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b000,
+                                     0b000,
+                                     0b000]),
+               b << 3);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b000,
+                                     0b000,
+                                     0b000]),
+               b << 4);
+
+}
+
+#[test]
+fn shr1() {
+    let b = Bitarea::from_parts(   &[0b001,
+                                     0b111,
+                                     0b010,
+                                     0b001]);
+
+    assert_eq!(Bitarea::from_parts(&[0b001,
+                                     0b111,
+                                     0b010,
+                                     0b001]),
+               b >> 0);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b011,
+                                     0b001,
+                                     0b000]),
+               b >> 1);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b001,
+                                     0b000,
+                                     0b000]),
+               b >> 2);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b000,
+                                     0b000,
+                                     0b000]),
+               b >> 3);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b000,
+                                     0b000,
+                                     0b000]),
+               b >> 4);
+
+}
+
+#[test]
+fn shr2() {
+    let b = Bitarea::from_parts(   &[0b111,
+                                     0b111,
+                                     0b111,
+                                     0b111]);
+
+    assert_eq!(Bitarea::from_parts(&[0b111,
+                                     0b111,
+                                     0b111,
+                                     0b111]),
+               b >> 0);
+
+    assert_eq!(Bitarea::from_parts(&[0b011,
+                                     0b011,
+                                     0b011,
+                                     0b011]),
+               b >> 1);
+
+    assert_eq!(Bitarea::from_parts(&[0b001,
+                                     0b001,
+                                     0b001,
+                                     0b001]),
+               b >> 2);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b000,
+                                     0b000,
+                                     0b000]),
+               b >> 3);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b000,
+                                     0b000,
+                                     0b000]),
+               b >> 4);
+
+}
+
+#[test]
+fn shr3() {
+    let b = Bitarea::from_parts(   &[0b101,
+                                     0b010,
+                                     0b101,
+                                     0b010]);
+
+    assert_eq!(Bitarea::from_parts(&[0b101,
+                                     0b010,
+                                     0b101,
+                                     0b010]),
+               b >> 0);
+
+    assert_eq!(Bitarea::from_parts(&[0b010,
+                                     0b001,
+                                     0b010,
+                                     0b001]),
+               b >> 1);
+
+    assert_eq!(Bitarea::from_parts(&[0b001,
+                                     0b000,
+                                     0b001,
+                                     0b000]),
+               b >> 2);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b000,
+                                     0b000,
+                                     0b000]),
+               b >> 3);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b000,
+                                     0b000,
+                                     0b000]),
+               b >> 4);
+
+}
+
+#[test]
+fn shr4() {
+    let b = Bitarea::from_parts(   &[0b010,
+                                     0b101,
+                                     0b010,
+                                     0b101]);
+
+    assert_eq!(Bitarea::from_parts(&[0b010,
+                                     0b101,
+                                     0b010,
+                                     0b101]),
+               b >> 0);
+
+    assert_eq!(Bitarea::from_parts(&[0b001,
+                                     0b010,
+                                     0b001,
+                                     0b010]),
+               b >> 1);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b001,
+                                     0b000,
+                                     0b001]),
+               b >> 2);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b000,
+                                     0b000,
+                                     0b000]),
+               b >> 3);
+
+    assert_eq!(Bitarea::from_parts(&[0b000,
+                                     0b000,
+                                     0b000,
+                                     0b000]),
+               b >> 4);
+
 }
 
 }
