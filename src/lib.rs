@@ -1,4 +1,5 @@
 extern crate rand;
+extern crate test;
 
 pub mod bitarea {
 
@@ -111,6 +112,7 @@ pub mod bitarea {
 
         use super::*;
         use test::Bencher;
+        use test::black_box;
 
         #[test]
         fn fmt() {
@@ -467,6 +469,24 @@ pub mod bitarea {
                                              0b000]),
                        b >> 4);
 
+        }
+
+        #[bench]
+        fn bench_shl(bench: &mut Bencher) {
+            let b = Bitarea::from_parts(&[0b001,
+                                          0b111,
+                                          0b010,
+                                          0b001]);
+            bench.iter(|| b << black_box(1));
+        }
+
+        #[bench]
+        fn bench_shr(bench: &mut Bencher) {
+            let b = Bitarea::from_parts(&[0b001,
+                                          0b111,
+                                          0b010,
+                                          0b001]);
+            bench.iter(|| b >> black_box(1));
         }
 
     }
