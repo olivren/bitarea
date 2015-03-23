@@ -2,6 +2,7 @@
 
 extern crate rand;
 extern crate test;
+extern crate quickcheck;
 
 pub mod bitarea {
 
@@ -41,16 +42,6 @@ pub mod bitarea {
             self.data & mask != 0
         }
 
-        pub fn from_parts(parts: &[u64]) -> Bitarea {
-            assert!(parts.len() == HEIGHT as usize);
-            let mut d = 0;
-            for v in parts.iter() {
-                d <<= WIDTH;
-                d |= *v;
-            }
-            d <<= UNUSED_BITS;
-            Bitarea {data: d}
-        }
     }
 
     impl Shl<u32> for Bitarea {
@@ -121,18 +112,47 @@ pub mod bitarea {
     mod tests {
 
         use super::*;
+        use super::{WIDTH, HEIGHT};
         use test::Bencher;
         use test::black_box;
+        use quickcheck::quickcheck;
+
 
         #[test]
-        fn fmt() {
-            let x = Bitarea::from_parts(&[0b100,
-                                          0b001,
-                                          0b110,
-                                          0b010]);
-            assert_eq!("\n100\n001\n110\n010", format!("{:?}", x));
-        }
+        fn shl() {
+            fn prop((data, shl_arg): (u64, u8)) -> bool {
+                let b1 = Bitarea { data: data };
+                let b2 = b1 << shl_arg as u32;
 
+                if shl_arg as u32 >= WIDTH {
+                    for i in 0..WIDTH {
+                        for j in 0..HEIGHT {
+                            if b2.get(i,j) != false {
+                                return false;
+                            }
+                        }
+                    }
+                    return true;
+                }
+
+                for i in 0..WIDTH-1 {
+                    for j in 0..HEIGHT {
+                        if b1.get(i+1,j) != b2.get(i, j) {
+                            return false;
+                        }
+                    }
+                }
+                for j in 0..HEIGHT {
+                    if b2.get(WIDTH-1,j) != false {
+                        return false;
+                    }
+                }
+                true
+            }
+
+            quickcheck(prop as fn((u64, u8)) -> bool);
+        }
+/*
         #[test]
         fn set() {
             let mut b = Bitarea::new();
@@ -498,7 +518,7 @@ pub mod bitarea {
                                           0b001]);
             bench.iter(|| b >> black_box(1));
         }
-
+*/
     }
 
 }

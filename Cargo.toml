@@ -6,3 +6,6 @@ authors = ["Olivier Renaud <o.renaud@gmx.fr>"]
 
 [dependencies]
 rand = "0.2.1"
+
+#[dev-dependencies]
+quickcheck = "0.2.4"
