@@ -6,4 +6,3 @@ authors = ["Olivier Renaud <o.renaud@gmx.fr>"]
 
 [dependencies]
 rand = "0.2.1"
-rand_macros = "0.1.4"

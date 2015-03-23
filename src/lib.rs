@@ -1,4 +1,3 @@
-#![feature(custom_derive)]
 #![feature(test)]
 
 extern crate rand;
@@ -8,6 +7,7 @@ pub mod bitarea {
 
     use std::ops::{Shl,Shr};
     use std::fmt;
+    use rand::{Rand, Rng};
 
     const WIDTH: u32 = 3;
     const HEIGHT: u32 = 4;
@@ -15,7 +15,6 @@ pub mod bitarea {
     const UNUSED_BITS: u32 = 64 - USED_BITS;
 
     #[derive(Copy)]
-    #[derive_Rand]
     pub struct Bitarea {
         pub data: u64,
     }
@@ -100,6 +99,13 @@ pub mod bitarea {
                 }
             }
             Ok(())
+        }
+    }
+
+    impl Rand for Bitarea {
+
+        fn rand<R: Rng>(rng: &mut R) -> Bitarea {
+            Bitarea { data: rng.next_u64() }
         }
     }
 
