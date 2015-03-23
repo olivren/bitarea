@@ -1,3 +1,6 @@
+#![feature(custom_derive)]
+#![feature(test)]
+
 extern crate rand;
 extern crate test;
 
@@ -6,12 +9,13 @@ pub mod bitarea {
     use std::ops::{Shl,Shr};
     use std::fmt;
 
-    const width: u32 = 3;
-    const height: u32 = 4;
-    const used_bits: u32 = width*height;
-    const unused_bits: u32 = 64 - used_bits;
+    const WIDTH: u32 = 3;
+    const HEIGHT: u32 = 4;
+    const USED_BITS: u32 = WIDTH*HEIGHT;
+    const UNUSED_BITS: u32 = 64 - USED_BITS;
 
     #[derive(Copy)]
+    #[derive_Rand]
     pub struct Bitarea {
         pub data: u64,
     }
@@ -23,8 +27,8 @@ pub mod bitarea {
         }
 
         pub fn set(&mut self, col: u32, row:u32, val: bool) {
-            assert!(row < height && col < width);
-            let mask = 1 << (63-(row*width+col));
+            assert!(row < HEIGHT && col < WIDTH);
+            let mask = 1 << (63-(row*WIDTH+col));
             self.data = if val {
                 self.data | mask
             } else {
@@ -33,19 +37,19 @@ pub mod bitarea {
         }
 
         pub fn get(self, col: u32, row:u32) -> bool {
-            assert!(row < height && col < width);
-            let mask = 1 << (63-(row*width+col));
+            assert!(row < HEIGHT && col < WIDTH);
+            let mask = 1 << (63-(row*WIDTH+col));
             self.data & mask != 0
         }
 
         pub fn from_parts(parts: &[u64]) -> Bitarea {
-            assert!(parts.len() == height as usize);
+            assert!(parts.len() == HEIGHT as usize);
             let mut d = 0;
             for v in parts.iter() {
-                d <<= width;
+                d <<= WIDTH;
                 d |= *v;
             }
-            d <<= unused_bits;
+            d <<= UNUSED_BITS;
             Bitarea {data: d}
         }
     }
@@ -55,15 +59,15 @@ pub mod bitarea {
         type Output = Bitarea;
 
         fn shl(self, rhl: u32) -> Bitarea {
-            if rhl >= width {
+            if rhl >= WIDTH {
                 return Bitarea {data: 0}
             }
             let mut mask = 0;
-            for _ in 0..height {
-                mask <<= width;
+            for _ in 0..HEIGHT {
+                mask <<= WIDTH;
                 mask |= (1 << rhl) - 1;
             }
-            mask = (!mask) << unused_bits;
+            mask = (!mask) << UNUSED_BITS;
             Bitarea {data: (self.data << rhl) & mask}
         }
     }
@@ -73,15 +77,15 @@ pub mod bitarea {
         type Output = Bitarea;
 
         fn shr(self, rhl: u32) -> Bitarea {
-            if rhl >= width {
+            if rhl >= WIDTH {
                 return Bitarea {data: 0}
             }
             let mut mask = 0;
-            for _ in 0..height {
-                mask <<= width;
-                mask |= (1 << (width - rhl)) - 1;
+            for _ in 0..HEIGHT {
+                mask <<= WIDTH;
+                mask |= (1 << (WIDTH - rhl)) - 1;
             }
-            mask = mask << unused_bits;
+            mask = mask << UNUSED_BITS;
             Bitarea {data: (self.data >> rhl) & mask}
         }
     }
@@ -89,9 +93,9 @@ pub mod bitarea {
     impl fmt::Debug for Bitarea {
 
         fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-            for r in 0..height {
+            for r in 0..HEIGHT {
                 try!(f.write_str("\n"));
-                for c in 0..width {
+                for c in 0..WIDTH {
                     try!(f.write_str(if self.get(c,r) {"1"} else {"0"}));
                 }
             }
@@ -103,7 +107,7 @@ pub mod bitarea {
     impl PartialEq for Bitarea {
 
         fn eq(&self, other: &Bitarea) -> bool {
-            return (self.data >> unused_bits) == (other.data >> unused_bits);
+            return (self.data >> UNUSED_BITS) == (other.data >> UNUSED_BITS);
         }
     }
 
